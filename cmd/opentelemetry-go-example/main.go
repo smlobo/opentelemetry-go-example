@@ -28,7 +28,7 @@ import (
 )
 
 func setup(name string, handlerFunction http.HandlerFunc, port uint16) {
-	tp := apptracer.InitTracerProvider(name + "-service")
+	tp := apptracer.InitTracerProvider("go-" + name + "-service")
 	defer func() {
 		if err := tp.Shutdown(context.Background()); err != nil {
 			log.Fatal(err)
