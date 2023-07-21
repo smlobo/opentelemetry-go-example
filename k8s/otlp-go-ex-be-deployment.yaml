@@ -21,7 +21,7 @@ spec:
           imagePullPolicy: Always
           env:
             - name: EXPORTER
-              value: "otlp"
+              value: "otlp-grpc"
             - name: OTLP_SERVER
               value: "$(SIMPLEST_COLLECTOR_SERVICE_HOST)"
           ports:
