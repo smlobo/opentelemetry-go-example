@@ -19,4 +19,6 @@
 
 # Golang build
 bin
+go.mod
+go.sum
 

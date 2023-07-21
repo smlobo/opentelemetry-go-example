@@ -45,7 +45,8 @@ func FrontendHandler() http.HandlerFunc {
 		time.Sleep(duration)
 
 		// Make wrapped call to backend
-		backendURL := fmt.Sprintf("http://localhost:%s/", appconfig.Config["BACKEND_PORT"])
+		backendURL := fmt.Sprintf("http://%s:%s/", appconfig.Config["BACKEND_SERVER"],
+			appconfig.Config["BACKEND_PORT"])
 		backendResponse, err := otelhttp.Post(r.Context(), backendURL, "text/html", nil)
 		if err != nil {
 			log.Fatal("Bad backend request:", backendURL, ";", err)

@@ -93,8 +93,11 @@ func fileExporter(w io.Writer) (trace.SpanExporter, error) {
 
 // Jaeger exporter
 func jaegerExporter() (trace.SpanExporter, error) {
-	return jaeger.New(jaeger.WithCollectorEndpoint(jaeger.
-		WithEndpoint(appconfig.Config["JAEGER_ENDPOINT"])))
+	jaegerServer := appconfig.Config["JAEGER_SERVER"]
+	jaegerPort := appconfig.Config["JAEGER_PORT"]
+	jaegerPath := appconfig.Config["JAEGER_PATH"]
+	jaegerEndpoint := "http://" + jaegerServer + ":" + jaegerPort + jaegerPath
+	return jaeger.New(jaeger.WithCollectorEndpoint(jaeger.WithEndpoint(jaegerEndpoint)))
 }
 
 // Zipkin exporter
@@ -105,7 +108,8 @@ func zipkinExporter() (trace.SpanExporter, error) {
 // OTLP exporter
 func otlpExporter() (trace.SpanExporter, error) {
 	client := otlptracehttp.NewClient(otlptracehttp.WithInsecure(),
-		otlptracehttp.WithEndpoint(appconfig.Config["OTLP_ENDPOINT"]),
+		otlptracehttp.WithEndpoint(appconfig.Config["OTLP_SERVER"] + ":" +
+			appconfig.Config["OTLP_PORT"]),
 		otlptracehttp.WithURLPath(appconfig.Config["OTLP_URL"]))
 	return otlptrace.New(context.Background(), client)
 }

@@ -1,0 +1,16 @@
+FROM golang:alpine AS build
+
+WORKDIR /app
+COPY .. .
+
+RUN go build -o opentelemetry-go-example cmd/opentelemetry-go-example/main.go
+
+FROM alpine:latest
+
+WORKDIR /app
+
+COPY --from=build /app/opentelemetry-go-example .
+COPY ../configs configs
+
+ENTRYPOINT ["/app/opentelemetry-go-example", "backend"]
+
