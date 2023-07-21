@@ -11,7 +11,8 @@ ZIPKIN_ENDPOINT: http://localhost:9411/api/v2/spans
 
 # OTLP endpoint
 OTLP_SERVER: localhost
-OTLP_PORT: 4318
+OTLP_GRPC_PORT: 4317
+OTLP_HTTP_PORT: 4318
 OTLP_URL: /v1/traces
 
 # Server configurations

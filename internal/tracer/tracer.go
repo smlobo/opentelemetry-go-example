@@ -16,16 +16,20 @@ package tracer
 
 import (
 	"context"
+	"fmt"
 	"go.opentelemetry.io/contrib/propagators/b3"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/jaeger"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
 	"go.opentelemetry.io/otel/exporters/zipkin"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"io"
 	"log"
 	appconfig "opentelemetry-go-example/internal/config"
@@ -55,6 +59,8 @@ func InitTracerProvider(serviceName string) (*trace.TracerProvider) {
 		exp, err = zipkinExporter()
 	case "otlp":
 		exp, err = otlpExporter()
+	case "otlp-grpc":
+		exp, err = otlpGrpcExporter()
 	}
 	if err != nil {
 		log.Fatal(err)
@@ -109,7 +115,21 @@ func zipkinExporter() (trace.SpanExporter, error) {
 func otlpExporter() (trace.SpanExporter, error) {
 	client := otlptracehttp.NewClient(otlptracehttp.WithInsecure(),
 		otlptracehttp.WithEndpoint(appconfig.Config["OTLP_SERVER"] + ":" +
-			appconfig.Config["OTLP_PORT"]),
+			appconfig.Config["OTLP_HTTP_PORT"]),
 		otlptracehttp.WithURLPath(appconfig.Config["OTLP_URL"]))
+	return otlptrace.New(context.Background(), client)
+}
+
+// OTLP grpc exporter
+func otlpGrpcExporter() (trace.SpanExporter, error) {
+	conn, err := grpc.Dial(appconfig.Config["OTLP_SERVER"] + ":" + appconfig.Config["OTLP_GRPC_PORT"],
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithBlock(),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create gRPC connection to collector: %w", err)
+	}
+	client := otlptracegrpc.NewClient(otlptracegrpc.WithInsecure(),
+		otlptracegrpc.WithGRPCConn(conn))
 	return otlptrace.New(context.Background(), client)
 }
