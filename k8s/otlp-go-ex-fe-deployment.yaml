@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+
+kind: Deployment
+
+metadata:
+  name: otlp-go-ex-frontend
+
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: otlp-go-ex-frontend
+  template:
+    metadata:
+      labels:
+        app: otlp-go-ex-frontend
+    spec:
+      containers:
+        - name: otlp-go-example-frontend
+          image: localhost:32000/otlp-go-example-frontend:latest
+          imagePullPolicy: Always
+          env:
+            - name: EXPORTER
+              value: "otlp"
+            - name: OTLP_SERVER
+              value: "$(SIMPLEST_COLLECTOR_SERVICE_HOST)"
+            - name: BACKEND_SERVER
+              value: "$(OTLP_GO_EX_BACKEND_SERVICE_HOST)"
+          ports:
+            - containerPort: 9000
+              name: http
