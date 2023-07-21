@@ -6,7 +6,7 @@ metadata:
   name: otlp-go-ex-backend
 
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: otlp-go-ex-backend
@@ -16,7 +16,7 @@ spec:
         app: otlp-go-ex-backend
     spec:
       containers:
-        - name: otlp-go-ex-backend
+        - name: otlp-go-example-backend
           image: localhost:32000/otlp-go-example-backend:latest
           imagePullPolicy: Always
           env:
