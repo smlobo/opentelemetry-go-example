@@ -11,5 +11,5 @@ spec:
       name: http
   selector:
     app: otlp-go-ex-frontend
-  type: ClusterIP
+  type: LoadBalancer
 
