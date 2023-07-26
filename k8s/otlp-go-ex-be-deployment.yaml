@@ -23,7 +23,7 @@ spec:
             - name: EXPORTER
               value: "otlp-grpc"
             - name: OTLP_SERVER
-              value: "$(SIMPLEST_COLLECTOR_SERVICE_HOST)"
+              value: "$(JAEGER_CASSANDRA_COLLECTOR_SERVICE_HOST)"
           ports:
             - containerPort: 9000
               name: http
