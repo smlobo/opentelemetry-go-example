@@ -16,14 +16,20 @@ package handler
 
 import (
 	"fmt"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
-	"go.opentelemetry.io/otel"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
-	appconfig "opentelemetry-go-example/internal/config"
 	"time"
+
+	appconfig "opentelemetry-go-example/internal/config"
+
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel"
 )
+
+var backendClient = &http.Client{
+	Transport: otelhttp.NewTransport(http.DefaultTransport),
+}
 
 func FrontendHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -37,6 +43,7 @@ func FrontendHandler() http.HandlerFunc {
 
 		// Now start a child span
 		_, span := otel.Tracer("otel-go-frontend").Start(r.Context(), "frontend-work")
+		defer span.End()
 
 		// Add an event
 		time.Sleep(duration)
@@ -47,20 +54,29 @@ func FrontendHandler() http.HandlerFunc {
 		// Make wrapped call to backend
 		backendURL := fmt.Sprintf("http://%s:%s/", appconfig.Config["BACKEND_SERVER"],
 			appconfig.Config["BACKEND_PORT"])
-		backendResponse, err := otelhttp.Post(r.Context(), backendURL, "text/html", nil)
+		backendRequest, err := http.NewRequestWithContext(r.Context(), http.MethodPost, backendURL, nil)
 		if err != nil {
-			log.Fatal("Bad backend request:", backendURL, ";", err)
+			http.Error(w, "Bad backend request", http.StatusInternalServerError)
+			return
 		}
+		backendResponse, err := backendClient.Do(backendRequest)
+		if err != nil {
+			log.Printf("Bad backend request: %s; %v", backendURL, err)
+			http.Error(w, "Bad backend response", http.StatusBadGateway)
+			return
+		}
+		defer backendResponse.Body.Close()
 
 		backendBody := "Bad backend"
 		if backendResponse.StatusCode == http.StatusOK {
-			bodyBytes, err := ioutil.ReadAll(backendResponse.Body)
+			bodyBytes, err := io.ReadAll(backendResponse.Body)
 			if err != nil {
-				log.Fatal(err)
+				log.Printf("Could not read backend response: %v", err)
+				http.Error(w, "Bad backend response", http.StatusBadGateway)
+				return
 			}
 			backendBody = string(bodyBytes)
 		}
-		backendResponse.Body.Close()
 
 		time.Sleep(duration)
 
@@ -69,7 +85,6 @@ func FrontendHandler() http.HandlerFunc {
 			time.Now().Local().Format("15:04:05.000"), backendBody)
 		w.Write([]byte(responseBody))
 
-		span.End()
 		time.Sleep(duration)
 	}
 }
